@@ -86,7 +86,7 @@ elseif (${RAYLIB_PLATFORM} STREQUAL "PLATFORM_DESKTOP_SDL")
 	# )
 
 	find_package(SDL3 CONFIG REQUIRED)
-	target_link_libraries(raylib PRIVATE SDL3)
+	target_link_libraries(raylib PRIVATE SDL3::SDL3-static)
 	target_compile_definitions(raylib PRIVATE USING_SDL3_PROJECT)
 
 elseif (${RAYLIB_PLATFORM} STREQUAL "PLATFORM_DESKTOP_RGFW")
