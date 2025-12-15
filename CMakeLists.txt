@@ -16,7 +16,8 @@ include(CMakeDependentOption)
 # "PLATFORM_WEB"
 # "PLATFORM_DRM"
 # "PLATFORM_ANDROID"
-set(RAYLIB_PLATFORM "PLATFORM_WEB_RGFW" CACHE STRING "raylib target platform")
+set(RAYLIB_PLATFORM "PLATFORM_DESKTOP_GLFW" CACHE STRING "raylib target platform")
+option(RAYLIB_BUILD_SHARED_LIBS "Building raylib as a SHARED library" OFF)
 option(RAYLIB_USE_EXTERNAL_GLFW "Use external GLFW library instead of rglfw module" OFF)
 option(RAYLIB_MODULE_AUDIO "Include audio module" ON)
 option(RAYLIB_MODULE_MODELS "Include models module" ON)
@@ -25,7 +26,11 @@ cmake_dependent_option(
 	"Build support for Wayland on Linux for GLFW" ON "UNIX;NOT APPLE" OFF
 )
 
-add_library(raylib)
+if (${RAYLIB_BUILD_SHARED_LIBS})
+	add_library(raylib SHARED)
+else()
+	add_library(raylib STATIC)
+endif()
 
 if (${RAYLIB_PLATFORM} STREQUAL "PLATFORM_DESKTOP_GLFW")
 	set(GRAPHICS "GRAPHICS_API_OPENGL_33")
@@ -43,7 +48,7 @@ if (${RAYLIB_PLATFORM} STREQUAL "PLATFORM_DESKTOP_GLFW")
 		# 	OVERRIDE_FIND_PACKAGE
 		# )
 
-		find_package(glfw CONFIG REQUIRED)
+		find_package(glfw REQUIRED)
 		target_link_libraries(raylib PRIVATE glfw)
 	else()
 		target_sources(raylib
@@ -85,9 +90,15 @@ elseif (${RAYLIB_PLATFORM} STREQUAL "PLATFORM_DESKTOP_SDL")
 	# 	OVERRIDE_FIND_PACKAGE
 	# )
 
-	find_package(SDL3 CONFIG REQUIRED)
-	target_link_libraries(raylib PRIVATE SDL3::SDL3-static)
-	target_compile_definitions(raylib PRIVATE USING_SDL3_PROJECT)
+	find_package(SDL3 QUIET)
+	if(SDL3_FOUND)
+		target_link_libraries(raylib PRIVATE SDL3::SDL3)
+		target_compile_definitions(raylib PRIVATE USING_SDL3_PROJECT)
+	else()
+		find_package(SDL2 REQUIRED)
+		target_link_libraries(raylib PRIVATE SDL2::SDL2)
+		target_compile_definitions(raylib PRIVATE USING_SDL2_PROJECT)
+	endif()
 
 elseif (${RAYLIB_PLATFORM} STREQUAL "PLATFORM_DESKTOP_RGFW")
 	set(GRAPHICS "GRAPHICS_API_OPENGL_33")
