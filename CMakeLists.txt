@@ -91,7 +91,7 @@ elseif (${RAYLIB_PLATFORM} STREQUAL "PLATFORM_DESKTOP_SDL")
 	# )
 
 	find_package(SDL3 QUIET)
-	if(SDL3_FOUND)
+	if(${SDL3_FOUND})
 		target_link_libraries(raylib PRIVATE SDL3::SDL3)
 		target_compile_definitions(raylib PRIVATE USING_SDL3_PROJECT)
 	else()
