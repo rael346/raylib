@@ -1,21 +1,27 @@
-if(NOT EXISTS "@CMAKE_BINARY_DIR@/install_manifest.txt")
-  message(FATAL_ERROR "Cannot find install manifest: @CMAKE_BINARY_DIR@/install_manifest.txt")
+set(MANIFEST "${CMAKE_BINARY_DIR}/install_manifest.txt")
+
+if(NOT EXISTS ${MANIFEST})
+	message(FATAL_ERROR "Cannot find install manifest: ${MANIFEST}")
 endif()
 
-file(READ "@CMAKE_BINARY_DIR@/install_manifest.txt" files)
-string(REGEX REPLACE "\n" ";" files "${files}")
+message(STATUS "============== Uninstalling raylib ===================")
+file(string ${MANIFEST} files)
 foreach(file ${files})
-  message(STATUS "Uninstalling $ENV{DESTDIR}${file}")
-  if(IS_SYMLINK "$ENV{DESTDIR}${file}" OR EXISTS "$ENV{DESTDIR}${file}")
-    exec_program(
-      "@CMAKE_COMMAND@" ARGS "-E remove \"$ENV{DESTDIR}${file}\""
-      OUTPUT_VARIABLE rm_out
-      RETURN_VALUE rm_retval
-      )
-    if(NOT "${rm_retval}" STREQUAL 0)
-      message(FATAL_ERROR "Problem when removing $ENV{DESTDIR}${file}")
-    endif()
-  else(IS_SYMLINK "$ENV{DESTDIR}${file}" OR EXISTS "$ENV{DESTDIR}${file}")
-    message(STATUS "File $ENV{DESTDIR}${file} does not exist.")
-  endif()
+	if(NOT EXISTS ${files})
+		message(STATUS "File '${file}' in manifest does not exist")
+		continue()
+	endif()
+
+	message(STATUS "Removing ${file}")
+
+	execute_process(
+			COMMAND ${CMAKE_COMMAND} -E remove ${file}
+			OUTPUT_VARIABLE rm_out
+			RESULT_VARIABLE rm_retval
+		)
+
+	if(NOT "${rm_retval}" STREQUAL 0)
+		message(FATAL_ERROR "Failed to remove ${file}")
+	endif()
 endforeach()
+message(STATUS "============== Uninstalled raylib ===================")
