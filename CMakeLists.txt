@@ -106,9 +106,6 @@ elseif (RAYLIB_PLATFORM STREQUAL "PLATFORM_WEB" OR RAYLIB_PLATFORM STREQUAL "PLA
 	set(GRAPHICS "GRAPHICS_API_OPENGL_ES2")
 	target_compile_definitions(raylib PRIVATE _DEFAULT_SOURCE)
 
-	# Use glfw3 library (context/input management)
-	target_link_options(raylib INTERFACE "-sUSE_GLFW=3")
-
 elseif (RAYLIB_PLATFORM STREQUAL "PLATFORM_DRM")
 	set(GRAPHICS "GRAPHICS_API_OPENGL_ES2")
 
