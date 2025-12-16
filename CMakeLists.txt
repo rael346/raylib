@@ -40,7 +40,6 @@ if (${RAYLIB_PLATFORM} STREQUAL "PLATFORM_DESKTOP_GLFW")
 		# set(GLFW_BUILD_DOCS OFF)
 		# set(GLFW_INSTALL OFF)
 		# set(GLFW_LIBRARY_TYPE "STATIC")
-		# include(FetchContent)
 		# FetchContent_Declare(
 		# 	glfw
 		# 	GIT_REPOSITORY "https://github.com/glfw/glfw.git"
@@ -103,7 +102,18 @@ elseif (${RAYLIB_PLATFORM} STREQUAL "PLATFORM_DESKTOP_SDL")
 elseif (${RAYLIB_PLATFORM} STREQUAL "PLATFORM_DESKTOP_RGFW")
 	set(GRAPHICS "GRAPHICS_API_OPENGL_33")
 
-elseif (${RAYLIB_PLATFORM} STREQUAL "PLATFORM_WEB" OR ${RAYLIB_PLATFORM} STREQUAL "PLATFORM_WEB_RGFW")
+elseif (${RAYLIB_PLATFORM} STREQUAL "PLATFORM_WEB")
+	set(GRAPHICS "GRAPHICS_API_OPENGL_ES2")
+	target_compile_definitions(raylib PRIVATE _DEFAULT_SOURCE)
+
+	target_link_options(raylib PRIVATE
+		-sALLOW_MEMORY_GROWTH=1
+		-sEXPORTED_RUNTIME_METHODS=[requestFullscreen]
+		-sUSE_GLFW=3
+		--shell-file "${CMAKE_SOURCE_DIR}/src/shell.html"
+	)
+
+elseif (${RAYLIB_PLATFORM} STREQUAL "PLATFORM_WEB_RGFW")
 	set(GRAPHICS "GRAPHICS_API_OPENGL_ES2")
 	target_compile_definitions(raylib PRIVATE _DEFAULT_SOURCE)
 
