@@ -21,7 +21,7 @@ option(RAYLIB_USE_EXTERNAL_GLFW "Use external GLFW library instead of rglfw modu
 option(RAYLIB_MODULE_AUDIO "Include audio module" ON)
 option(RAYLIB_MODULE_MODELS "Include models module" ON)
 cmake_dependent_option(RAYLIB_GLFW_BUILD_WAYLAND
-	"Build support for Wayland on Linux for GLFW" ON "UNIX;NOT APPLE" OFF
+	"Build support for Wayland on Linux for GLFW (this is for the GLFW version included with raylib, use GLFW_BUILD_WAYLAND if using external GLFW)" ON "UNIX;NOT APPLE" OFF
 )
 
 if (RAYLIB_BUILD_SHARED_LIBS)
@@ -79,15 +79,13 @@ elseif (RAYLIB_PLATFORM STREQUAL "PLATFORM_DESKTOP_SDL")
 elseif (RAYLIB_PLATFORM STREQUAL "PLATFORM_DESKTOP_RGFW")
 	set(GRAPHICS "GRAPHICS_API_OPENGL_33")
 
-elseif (RAYLIB_PLATFORM STREQUAL "PLATFORM_WEB")
-	set(GRAPHICS "GRAPHICS_API_OPENGL_ES2")
-	target_compile_definitions(raylib PRIVATE _DEFAULT_SOURCE)
-	target_link_options(raylib INTERFACE "-sUSE_GLFW=3")
-
-elseif (RAYLIB_PLATFORM STREQUAL "PLATFORM_WEB_RGFW")
+elseif (RAYLIB_PLATFORM STREQUAL "PLATFORM_WEB" OR RAYLIB_PLATFORM STREQUAL "PLATFORM_WEB_RGFW")
 	set(GRAPHICS "GRAPHICS_API_OPENGL_ES2")
 	target_compile_definitions(raylib PRIVATE _DEFAULT_SOURCE)
 	target_link_options(raylib INTERFACE "-sASYNCIFY")
+	if (RAYLIB_PLATFORM STREQUAL "PLATFORM_WEB")
+		target_link_options(raylib INTERFACE "-sUSE_GLFW=3")
+	endif()
 
 elseif (RAYLIB_PLATFORM STREQUAL "PLATFORM_DRM")
 	set(GRAPHICS "GRAPHICS_API_OPENGL_ES2")
