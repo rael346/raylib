@@ -23,6 +23,9 @@ option(RAYLIB_MODULE_MODELS "Include models module" ON)
 cmake_dependent_option(RAYLIB_GLFW_BUILD_WAYLAND
 	"Build support for Wayland on Linux for GLFW (this is for the GLFW version included with raylib, use GLFW_BUILD_WAYLAND if using external GLFW)" ON "UNIX;NOT APPLE" OFF
 )
+cmake_dependent_option(RAYLIB_BUILD_EXAMPLES
+	"Build examples (only when raylib is top level)" ON "PROJECT_IS_TOP_LEVEL" OFF
+)
 
 if (RAYLIB_BUILD_SHARED_LIBS)
 	add_library(raylib SHARED)
@@ -32,14 +35,28 @@ endif()
 
 if (RAYLIB_PLATFORM STREQUAL "PLATFORM_DESKTOP_GLFW")
 	set(GRAPHICS "GRAPHICS_API_OPENGL_33")
+
 	if (RAYLIB_USE_EXTERNAL_GLFW)
+
+		include(FetchContent)
+		set(GLFW_STANDALONE OFF)
+		set(GLFW_BUILD_DOCS OFF)
+		set(GLFW_INSTALL OFF)
+		set(GLFW_LIBRARY_TYPE "STATIC")
+		FetchContent_Declare(glfw
+			GIT_REPOSITORY "https://github.com/glfw/glfw.git"
+			GIT_TAG "master"
+			OVERRIDE_FIND_PACKAGE
+			EXCLUDE_FROM_ALL
+		)
+
 		find_package(glfw REQUIRED)
 		target_link_libraries(raylib PRIVATE glfw)
 	else()
 		target_sources(raylib
 			PRIVATE 			src/rglfw.c
 			PRIVATE
-				FILE_SET 		glfw_headers
+				FILE_SET 		glfwHeaders
 				TYPE				HEADERS
 				BASE_DIRS 	src/external/glfw/include
 				FILES  			src/external/glfw/include/GLFW/glfw3.h
@@ -57,6 +74,7 @@ if (RAYLIB_PLATFORM STREQUAL "PLATFORM_DESKTOP_GLFW")
 		endif()
 	endif()
 
+
 	if (LINUX)
 		target_compile_definitions(raylib PRIVATE
 			$<IF:$<BOOL:${RAYLIB_GLFW_BUILD_WAYLAND}>,_GLFW_WAYLAND,_GLFW_X11>
@@ -65,6 +83,19 @@ if (RAYLIB_PLATFORM STREQUAL "PLATFORM_DESKTOP_GLFW")
 
 elseif (RAYLIB_PLATFORM STREQUAL "PLATFORM_DESKTOP_SDL")
 	set(GRAPHICS "GRAPHICS_API_OPENGL_33")
+
+	include(FetchContent)
+	set(SDL_TEST_LIBRARY OFF)
+	set(SDL_SHARED OFF)
+	set(SDL_STATIC ON)
+	FetchContent_Declare(SDL3
+		GIT_REPOSITORY "https://github.com/libsdl-org/SDL.git"
+		GIT_TAG "main"
+		GIT_SHALLOW ON
+		GIT_PROGRESS ON
+		OVERRIDE_FIND_PACKAGE
+		EXCLUDE_FROM_ALL
+	)
 
 	find_package(SDL3 QUIET)
 	if(${SDL3_FOUND})
@@ -108,7 +139,7 @@ target_sources(raylib
 		src/utils.c
 
 	PUBLIC
-		FILE_SET 		raylib_headers
+		FILE_SET 		raylibHeaders
 		TYPE 				HEADERS
 		BASE_DIRS 	src
 		FILES  			src/raylib.h
@@ -117,16 +148,48 @@ target_sources(raylib
 								src/raymath.h
 )
 target_compile_features(raylib PRIVATE c_std_99)
-target_compile_definitions(raylib PRIVATE
-	${RAYLIB_PLATFORM}
-	${GRAPHICS}
-	_GNU_SOURCE
-	$<$<PLATFORM_ID:Windows>:UNICODE>
-	$<$<PLATFORM_ID:Linux>:_DEFAULT_SOURCE>
-	$<$<CONFIG:DEBUG>:_DEBUG>
+target_compile_definitions(raylib
+	PUBLIC
+		${RAYLIB_PLATFORM}
+		${GRAPHICS}
+
+	PRIVATE
+		_GNU_SOURCE
+		$<$<PLATFORM_ID:Windows>:UNICODE>
+		$<$<PLATFORM_ID:Linux>:_DEFAULT_SOURCE>
+		$<$<CONFIG:DEBUG>:_DEBUG>
 )
 
 if (PROJECT_IS_TOP_LEVEL)
+	if (RAYLIB_BUILD_EXAMPLES)
+		add_subdirectory("examples")
+	endif()
+
+	include(GNUInstallDirs)
+	include(CMakePackageConfigHelpers)
+
+	install(
+		TARGETS 	raylib
+		EXPORT 		raylibTargets
+		FILE_SET 	raylibHeaders
+	)
+
+	install(
+		EXPORT 				raylibTargets
+		DESTINATION 	${CMAKE_INSTALL_LIBDIR}/cmake/raylib
+	)
+
+	write_basic_package_version_file(
+			${CMAKE_CURRENT_BINARY_DIR}/raylibConfigVersion.cmake
+			COMPATIBILITY ExactVersion
+	)
+
+	install(
+			FILES 				cmake/raylibConfig.cmake
+										${CMAKE_CURRENT_BINARY_DIR}/raylibConfigVersion.cmake
+			DESTINATION 	${CMAKE_INSTALL_LIBDIR}/cmake/raylib
+	)
+
 	if (NOT TARGET uninstall)
 		add_custom_target(uninstall COMMAND ${CMAKE_COMMAND} -P ${CMAKE_BINARY_DIR}/Uninstall.cmake)
 	endif()

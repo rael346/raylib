@@ -5,7 +5,7 @@ if(NOT EXISTS ${MANIFEST})
 endif()
 
 message(STATUS "============== Uninstalling raylib ===================")
-file(string ${MANIFEST} files)
+file(STRING ${MANIFEST} files)
 foreach(file ${files})
 	if(NOT EXISTS ${files})
 		message(STATUS "File '${file}' in manifest does not exist")
@@ -20,7 +20,7 @@ foreach(file ${files})
 			RESULT_VARIABLE rm_retval
 		)
 
-	if(NOT "${rm_retval}" STREQUAL 0)
+	if(NOT rm_retval STREQUAL 0)
 		message(FATAL_ERROR "Failed to remove ${file}")
 	endif()
 endforeach()
