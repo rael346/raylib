@@ -76,6 +76,12 @@ if (RAYLIB_PLATFORM STREQUAL "PLATFORM_DESKTOP_GLFW" OR
 	target_link_libraries(raylib_opengl_interop raylib)
 
 	if (APPLE)
-		target_link_libraries(raylib_opengl_interop "-framework OpenGL")
+		target_link_libraries(raylib_opengl_interop
+			"-framework OpenGL"
+			"-framework Cocoa"
+			"-framework IOKit"
+			"-framework CoreFoundation"
+			"-framework QuartzCore"
+		)
 	endif()
 endif()

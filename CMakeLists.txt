@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.25.0)
+cmake_minimum_required(VERSION 3.26.0)
 project(
 	raylib
 	VERSION 5.6.0
@@ -11,13 +11,26 @@ include(CMakeDependentOption)
 # "PLATFORM_DESKTOP_GLFW"
 # "PLATFORM_DESKTOP_SDL"
 # "PLATFORM_DESKTOP_RGFW"
-# "PLATFORM_WEB_RGFW"
+# "PLATFORM_DESKTOP_WIN32"
 # "PLATFORM_WEB"
+# "PLATFORM_WEB_RGFW"
 # "PLATFORM_DRM"
 # "PLATFORM_ANDROID"
 set(RAYLIB_PLATFORM "PLATFORM_DESKTOP_GLFW" CACHE STRING "raylib target platform")
+
+
+# GRAPHICS_API_OPENGL_33
+# GRAPHICS_API_OPENGL_SOFTWARE
+# GRAPHICS_API_OPENGL_11
+# GRAPHICS_API_OPENGL_21
+# GRAPHICS_API_OPENGL_43
+# GRAPHICS_API_OPENGL_ES2
+# GRAPHICS_API_OPENGL_ES3
+set(RAYLIB_GRAPHICS "DEFAULT" CACHE STRING "raylib graphics API")
+
 option(RAYLIB_BUILD_SHARED_LIBS "Building raylib as a SHARED library" OFF)
 option(RAYLIB_USE_EXTERNAL_GLFW "Use external GLFW library instead of rglfw module" OFF)
+option(RAYLIB_FETCH_BACKEND "Fetch current backend from github (only for GLFW and SDL3)" OFF)
 option(RAYLIB_MODULE_AUDIO "Include audio module" ON)
 option(RAYLIB_MODULE_MODELS "Include models module" ON)
 cmake_dependent_option(RAYLIB_GLFW_BUILD_WAYLAND
@@ -34,24 +47,27 @@ else()
 endif()
 
 if (RAYLIB_PLATFORM STREQUAL "PLATFORM_DESKTOP_GLFW")
-	set(GRAPHICS "GRAPHICS_API_OPENGL_33")
+	if (RAYLIB_GRAPHICS STREQUAL "DEFAULT")
+		set(RAYLIB_GRAPHICS "GRAPHICS_API_OPENGL_33")
+	endif()
 
 	if (RAYLIB_USE_EXTERNAL_GLFW)
-
-		include(FetchContent)
-		set(GLFW_STANDALONE OFF)
-		set(GLFW_BUILD_DOCS OFF)
-		set(GLFW_INSTALL OFF)
-		set(GLFW_LIBRARY_TYPE "STATIC")
-		FetchContent_Declare(glfw
-			GIT_REPOSITORY "https://github.com/glfw/glfw.git"
-			GIT_TAG "master"
-			OVERRIDE_FIND_PACKAGE
-			EXCLUDE_FROM_ALL
-		)
+		if (RAYLIB_FETCH_BACKEND)
+			include(FetchContent)
+			set(GLFW_STANDALONE OFF)
+			set(GLFW_BUILD_DOCS OFF)
+			set(GLFW_INSTALL OFF)
+			set(GLFW_LIBRARY_TYPE "STATIC")
+			FetchContent_Declare(glfw
+				GIT_REPOSITORY "https://github.com/glfw/glfw.git"
+				GIT_TAG "master"
+				OVERRIDE_FIND_PACKAGE
+				EXCLUDE_FROM_ALL
+			)
+		endif()
 
 		find_package(glfw REQUIRED)
-		target_link_libraries(raylib PRIVATE glfw)
+		target_link_libraries(raylib PRIVATE $<BUILD_LOCAL_INTERFACE:glfw>)
 	else()
 		target_sources(raylib
 			PRIVATE 			src/rglfw.c
@@ -62,14 +78,15 @@ if (RAYLIB_PLATFORM STREQUAL "PLATFORM_DESKTOP_GLFW")
 				FILES  			src/external/glfw/include/GLFW/glfw3.h
 										src/external/glfw/include/GLFW/glfw3native.h
 		)
-		target_link_libraries(raylib PRIVATE
-			"-framework Cocoa"
-			"-framework IOKit"
-			"-framework CoreFoundation"
-			"-framework QuartzCore"
-		)
 		set_source_files_properties(src/rglfw.c PROPERTIES COMPILE_OPTIONS "-U_GNU_SOURCE")
+
 		if (APPLE)
+			target_link_libraries(raylib PRIVATE
+				"-framework Cocoa"
+				"-framework IOKit"
+				"-framework CoreFoundation"
+				"-framework QuartzCore"
+			)
 			set_source_files_properties(src/rglfw.c PROPERTIES COMPILE_OPTIONS "-xobjective-c")
 		endif()
 	endif()
@@ -82,36 +99,49 @@ if (RAYLIB_PLATFORM STREQUAL "PLATFORM_DESKTOP_GLFW")
 	endif()
 
 elseif (RAYLIB_PLATFORM STREQUAL "PLATFORM_DESKTOP_SDL")
-	set(GRAPHICS "GRAPHICS_API_OPENGL_33")
+	if (RAYLIB_GRAPHICS STREQUAL "DEFAULT")
+		set(RAYLIB_GRAPHICS "GRAPHICS_API_OPENGL_33")
+	endif()
 
-	include(FetchContent)
-	set(SDL_TEST_LIBRARY OFF)
-	set(SDL_SHARED OFF)
-	set(SDL_STATIC ON)
-	FetchContent_Declare(SDL3
-		GIT_REPOSITORY "https://github.com/libsdl-org/SDL.git"
-		GIT_TAG "main"
-		GIT_SHALLOW ON
-		GIT_PROGRESS ON
-		OVERRIDE_FIND_PACKAGE
-		EXCLUDE_FROM_ALL
-	)
+	if (RAYLIB_FETCH_BACKEND)
+		include(FetchContent)
+		set(SDL_TEST_LIBRARY OFF)
+		set(SDL_SHARED OFF)
+		set(SDL_STATIC ON)
+		FetchContent_Declare(SDL3
+			GIT_REPOSITORY "https://github.com/libsdl-org/SDL.git"
+			GIT_TAG "main"
+			GIT_SHALLOW ON
+			GIT_PROGRESS ON
+			OVERRIDE_FIND_PACKAGE
+			EXCLUDE_FROM_ALL
+		)
+	endif()
 
 	find_package(SDL3 QUIET)
 	if(${SDL3_FOUND})
-		target_link_libraries(raylib PRIVATE SDL3::SDL3)
+		target_link_libraries(raylib PRIVATE $<BUILD_LOCAL_INTERFACE:SDL3::SDL3>)
 		target_compile_definitions(raylib PRIVATE USING_SDL3_PROJECT)
 	else()
 		find_package(SDL2 REQUIRED)
-		target_link_libraries(raylib PRIVATE SDL2::SDL2)
+		target_link_libraries(raylib PRIVATE $<BUILD_LOCAL_INTERFACE:SDL2::SDL2>)
 		target_compile_definitions(raylib PRIVATE USING_SDL2_PROJECT)
 	endif()
 
 elseif (RAYLIB_PLATFORM STREQUAL "PLATFORM_DESKTOP_RGFW")
-	set(GRAPHICS "GRAPHICS_API_OPENGL_33")
+	if (RAYLIB_GRAPHICS STREQUAL "DEFAULT")
+		set(RAYLIB_GRAPHICS "GRAPHICS_API_OPENGL_33")
+	endif()
+
+elseif (RAYLIB_PLATFORM STREQUAL "PLATFORM_DESKTOP_WIN32")
+	if (RAYLIB_GRAPHICS STREQUAL "DEFAULT")
+		set(RAYLIB_GRAPHICS "GRAPHICS_API_OPENGL_33")
+	endif()
 
 elseif (RAYLIB_PLATFORM STREQUAL "PLATFORM_WEB" OR RAYLIB_PLATFORM STREQUAL "PLATFORM_WEB_RGFW")
-	set(GRAPHICS "GRAPHICS_API_OPENGL_ES2")
+	if (RAYLIB_GRAPHICS STREQUAL "DEFAULT")
+		set(RAYLIB_GRAPHICS "GRAPHICS_API_OPENGL_ES2")
+	endif()
 	target_compile_definitions(raylib PRIVATE _DEFAULT_SOURCE)
 	target_link_options(raylib INTERFACE "-sASYNCIFY")
 	if (RAYLIB_PLATFORM STREQUAL "PLATFORM_WEB")
@@ -119,10 +149,14 @@ elseif (RAYLIB_PLATFORM STREQUAL "PLATFORM_WEB" OR RAYLIB_PLATFORM STREQUAL "PLA
 	endif()
 
 elseif (RAYLIB_PLATFORM STREQUAL "PLATFORM_DRM")
-	set(GRAPHICS "GRAPHICS_API_OPENGL_ES2")
+	if (RAYLIB_GRAPHICS STREQUAL "DEFAULT")
+		set(RAYLIB_GRAPHICS "GRAPHICS_API_OPENGL_ES2")
+	endif()
 
 elseif (RAYLIB_PLATFORM STREQUAL "PLATFORM_ANDROID")
-	set(GRAPHICS "GRAPHICS_API_OPENGL_ES2")
+	if (RAYLIB_GRAPHICS STREQUAL "DEFAULT")
+		set(RAYLIB_GRAPHICS "GRAPHICS_API_OPENGL_ES2")
+	endif()
 
 else()
 	message(FATAL_ERROR "Platform ${RAYLIB_PLATFORM} not supported")
@@ -136,7 +170,6 @@ target_sources(raylib
 		src/rshapes.c
 		src/rtext.c
 		src/rtextures.c
-		src/utils.c
 
 	PUBLIC
 		FILE_SET 		raylibHeaders
@@ -151,7 +184,7 @@ target_compile_features(raylib PRIVATE c_std_99)
 target_compile_definitions(raylib
 	PUBLIC
 		${RAYLIB_PLATFORM}
-		${GRAPHICS}
+		${RAYLIB_GRAPHICS}
 
 	PRIVATE
 		_GNU_SOURCE
