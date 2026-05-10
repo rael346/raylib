@@ -119,7 +119,9 @@ if (RAYLIB_PLATFORM STREQUAL "PLATFORM_DESKTOP_GLFW")
 			set(GLFW_LIBRARY_TYPE "STATIC")
 			FetchContent_Declare(glfw
 				GIT_REPOSITORY "https://github.com/glfw/glfw.git"
-				GIT_TAG "master"
+				GIT_TAG "3.4"
+        GIT_SHALLOW ON
+        GIT_PROGRESS ON
 				OVERRIDE_FIND_PACKAGE
 				EXCLUDE_FROM_ALL
 			)
@@ -172,7 +174,7 @@ elseif (RAYLIB_PLATFORM STREQUAL "PLATFORM_DESKTOP_SDL")
 		set(SDL_STATIC ON)
 		FetchContent_Declare(SDL3
 			GIT_REPOSITORY "https://github.com/libsdl-org/SDL.git"
-			GIT_TAG "main"
+			GIT_TAG "release-3.4.x"
 			GIT_SHALLOW ON
 			GIT_PROGRESS ON
 			OVERRIDE_FIND_PACKAGE
